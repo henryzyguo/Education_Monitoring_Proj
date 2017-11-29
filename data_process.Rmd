@@ -16,6 +16,9 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r read data}
+library(dplyr)
+library(ggplot2)
+library(reshape2)
 enr_age <- read.csv('enr_by_agegrd.csv')
 staff_ed <- read.csv('staff_by_ed.csv')
 ent_new <- read.csv('new_entrants.csv')
@@ -24,14 +27,48 @@ staff_qf <- read.csv('staff_by_qlf.csv')
 stu_grd9 <- read.csv('Grd_0910Students.csv')
 acad_grd9 <- read.csv('Grd_0910Academics.csv')
 acad_12 <- read.csv("Grd1112_Academics.csv")
-```
+enr_age<-filter(enr_age,SCHOOL=="Addibre")
+G1M<-select(enr_age,starts_with("G1M"),Acad_yr)
+G1F<-select(enr_age,starts_with("G1F"),Acad_yr)
+G1M<-arrange(G1M,desc(Acad_yr))
+G1M$Acad_yr <-NULL 
 
+rownames(G1M)<-(2004:2010)
+G1M<-as.table(t(G1M))
+rownames(G1M)<-(6:17)
+dat2 <- filter(melt(G1M),value!=0)
+
+ggplot(dat2, aes(x=Var2, y=value, fill=as.factor(Var1))) + geom_bar(stat="identity") +labs(x="year",y="person number",fill="age",title="Age conponent each year")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+theme(plot.title = element_text(hjust = 0.5))
+```
 ## Including Plots
 
 You can also embed plots, for example:
+```{rpressure, echo=FALSE}
+#filter
+ent_new <- read.csv('new_entrants.csv')
+ent_new <-filter(ent_new,SCHOOL=="Addibre")
+ent_new <-select(ent_new,4:12)
+rownames(ent_new)<-c(2006,2010)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+ent_new <-select(ent_new,-Acad_yr)
+#melt
+dat3 <- filter(melt(t(ent_new)),value!=0)
+
+ggplot(dat3, aes(x=Var2, y=value, fill=as.factor(Var1))) + geom_bar(stat="identity") +labs(x="year",y="person number",fill="age",title="new entry Age conponent each year")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+theme(plot.title = element_text(hjust = 0.5))
+
+ent_new <- read.csv('new_entrants.csv')
+ent_new <-filter(ent_new,SCHOOL=="Addibre")
+ent_new <-select(ent_new,4:12)
+rownames(ent_new)<-c(2006,2010)
+ent_new <-select(ent_new,-Acad_yr)
+#melt
+dat3 <- melt(t(ent_new))
+dat3
+ggplot(dat3, aes(x=Var1, y=value, fill=as.factor(Var1))) + geom_bar(stat="identity") +labs(x="year",y="person number",fill="age",title="Age conponent each year")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+theme(plot.title = element_text(hjust = 0.5))+facet_grid(.~Var2)
 ```
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
