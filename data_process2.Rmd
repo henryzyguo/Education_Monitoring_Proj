@@ -1,0 +1,120 @@
+---
+title: "Education_monitoring_preprocess"
+author: "Henryzyguo"
+date: "11/28/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r read data}
+enr_age <- read.csv('enr_by_agegrd.csv')
+ent_new <- read.csv('new_entrants.csv')
+schage_pop <- read.csv('schage_population.csv')
+staff_qf <- read.csv('staff_by_qlf.csv')
+
+acad_grd12 <- read.csv("Grd1112_Academics.csv")
+```
+
+## Including Plots
+
+Save staffed.expanded to RData
+
+```{r process_teachers_data, echo=FALSE}
+staff_ed <- read.csv('staff_by_ed.csv')
+# replace all null values in df
+staff_ed[is.na(staff_ed)] <- 0
+# new column is sum of male and female
+for(i in 3:24){
+  staff_ed[,(47+i)] <- staff_ed[,(i*2-1)]+staff_ed[,(i*2)]
+  colnames(staff_ed)[47+i]<-gsub('M','',colnames(staff_ed)[i*2-1])
+}
+# delete all columns of sex, directory
+staff_ed <- staff_ed[,-c(5:48)]
+staff_ed <- subset(staff_ed,select = -Qlf_Code)
+# expand by grades 1-4 or 5-8
+staff_ed14 <- staff_ed[,c(1:5,7,9,11,13,15,17,19,21,23,25)]
+staff_ed58 <- staff_ed[,c(1:4,6,8,10,12,14,16,18,20,22,24,26)]
+staff_ed14$grade <- 'Grade 1 to 4'
+staff_ed58$grade <- 'Grade 5 to 8'
+colnames(staff_ed14)[5:14]<-gsub('_1_4','',colnames(staff_ed14)[5:14])
+colnames(staff_ed14)[15] <- 'NR'
+colnames(staff_ed58)[5:15]<-colnames(staff_ed14)[5:15]
+staff_ednew <- rbind(staff_ed14,staff_ed58)
+remove(staff_ed14,staff_ed58)
+# add a total number of teachers
+# staff_ednew$total <- rowSums(staff_ed[,6:27])
+
+# create columns for saving Qualification levels, not recording the teachers whose qualifications are not recorded
+for(i in 5:14){
+  staff_ednew[i+12] <- as.numeric(gsub('Q','',colnames(staff_ednew)[i]))
+}
+# expand the first column Q1
+staffed.expanded <- staff_ednew[rep(row.names(staff_ednew), staff_ednew[,5]), c(1:4,17,16)]
+colnames(staffed.expanded)[5] <- 'Qualification'
+# expand all qf columns
+for(i in 6:14){
+  staffed.new <- staff_ednew[rep(row.names(staff_ednew), staff_ednew[,i]), c(1:4,i+12,16)]
+  colnames(staffed.new)[5] <- 'Qualification'
+  staffed.expanded <- rbind(staffed.expanded,staffed.new)
+}
+staffed.expanded$Qualification[staffed.expanded$Qualification==14]<-11
+remove(staff_ednew,staffed.new)
+```
+
+```{r plot teacher}
+# teacher
+# caculate mean
+staff_means <- ddply(staffed.expanded, "grade", summarise, mean_Q = mean(Qualification))
+
+violin <- ggplot(staffed.expanded, aes(x=grade, y=Qualification, fill=grade),color = c("indianred", "gold")) + 
+  geom_violin(show.legend = FALSE) +
+  labs(title="Teachers' Certification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
+  facet_grid(~grade,scale ="free")
+violin + 
+  stat_summary(fun.y = median, geom="point",color='blue',size = 2) +
+  geom_hline(data=staff_means, aes(yintercept=mean_Q),color=c("orange"), linetype="dashed")+
+  scale_fill_manual(values=c("indianred", "gold"))
+```
+
+```{r plot student}
+enr_age <- read.csv('enr_by_agegrd.csv')
+enr_age$Std_Boy <- rowSums(enr_age[grep("M",colnames(enr_age))])
+enr_age$Std_Girl <- rowSums(enr_age[grep("F",colnames(enr_age))])
+tch_std <- enr_age[,c(3,4,183,184,185)] %>% inner_join(staff_ed[,c(3,4,50)], by = c("SCHOOL","Acad_yr"))
+# tch_std <- melt(tch_std, id=c("SCHOOL","Acad_yr","Tch_Sum"))
+p<-ggplot(data=tch_std, aes(x=SCHOOL, y=Tab_16/Tch_Sum, fill=SCHOOL)) +
+  geom_bar(stat="identity",width=0.4)+
+  labs(title="Students/Teachers Ratio in 2006",x="School Name", y = "Average Student Number of A Teacher") 
+# Horizontal bar plot
+p + coord_flip()
+```
+
+```{r acad}
+stu_grd9 <- read.csv('Grd_0910Students.csv')
+acad_grd9 <- read.csv('Grd_0910Academics.csv')
+colnames(stu_grd9)[13]<-'Stud.ID'
+stu_grd9 <- stu_grd9[,colSums(is.na(stu_grd9))<nrow(stu_grd9)]
+acad_grd9 <- acad_grd9[,colSums(is.na(acad_grd9))<nrow(acad_grd9)]
+grd9 <- acad_grd9 %>% inner_join(stu_grd9[,c(6,7,8,9,11)], by = "Stud.ID")
+grd9$Age_startGrd9 <- grd9$Age-grd9$Grade+9
+# choose rows grades are not NA and columns
+selected <- grd9 %>% subset(Tigrigna.Sem1.G9 !='NA',select = c(Acad.yr.G9,Tigrigna.Sem1.G9,Sex,Age_startGrd9))
+p  <- ggplot(selected, aes(Tigrigna.Sem1.G9, color=Sex, fill=Sex))
+p + geom_density(alpha=0.55)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
