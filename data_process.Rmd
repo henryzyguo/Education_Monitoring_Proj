@@ -83,6 +83,14 @@ scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue"
 ```{r acad}
 ###3academics
 acad_overview <- read.csv('aca_overview.csv')
+acad_overview <- filter(acad_overview,test=="1ST")
+acad_overview <- select(acad_overview,-test)
+#rownames(acad_overview) <-c(9:12)
+acad_overview <- melt(acad_overview)
+#rownames(acad_overview)<-acad_overview$grade
+#acad_overview<-t(acad_overview)
+ggplot(acad_overview, aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+labs(x="grade",y="score",title="Academic overview each year",fill="subject")+theme(plot.title = element_text(hjust = 0.5))+facet_grid(.~reorder(grade,value))
 ```
 
 
