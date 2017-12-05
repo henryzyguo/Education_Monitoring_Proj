@@ -1,66 +1,121 @@
 library(shiny)
 library(shinythemes)
+library(shiny)
+library(ggplot2)
+library(plotly)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(reshape2)
+
+enr_age <- readRDS("enr_age.Rdata")
+staff_ed <- readRDS("staff_ed.Rdata")
+ent_new <-readRDS("ent_new.RData")
+grd9 <- readRDS("grd9.RData")
+grd12 <- readRDS("grd12.RData")
+staffed.expanded <- readRDS("staffed.expanded.RData")
+acad_overview <- readRDS("aca_overview.RData")
+
 # Define UI for application that draws a histogram
 shinyUI(
   tagList(
-    shinythemes::themeSelector(),
     navbarPage(
-      theme = "superhero",
-      "Title",
+      theme = shinytheme("sandstone"),
+      "Education Monitoring",
+      
+      # student enrollment
       tabPanel("Student Enrollment",
                sidebarPanel(
                  # fileInput("file", "File input:"),
                  # textInput("txt", "Text input:", "general"),
-                 selectInput("School",label="See Students in", choices=ent_new$SCHOOL)
-                 
+                 selectInput("School",label="Select Students in School", choices=levels(ent_new$SCHOOL)),
+                 selectInput("Grade",label="Students in Grade", choices=c(1:8))
                ),
                mainPanel(
                  tabsetPanel(
                    tabPanel("Student Age Component",
-                            plotOutput("ageplot"),
-                            h4("Verbatim text output"),
-                            verbatimTextOutput("comment1")
+                            h4(""),
+                            plotlyOutput("ageplot"),
+                            verbatimTextOutput("enr_comment")
                    ),
                    tabPanel("Student Entrance Age and Sex",
-                            plotOutput("ageplot"),
-                            h4("Verbatim text output"),
-                            verbatimTextOutput("comment2")
-                   ),
-                   tabPanel("Drop Out Rate", "This part is still blank")
+                            h4("New Grade One Entry Age Component by Year"),
+                            # adidesta
+                            fluidRow(
+                              column(6,  plotlyOutput("new_ageplot")
+                              ),
+                              column(6,  plotlyOutput("new_sexplot")
+                              ),
+                              column(6, verbatimTextOutput("ent_comment1")
+                              ),
+                              column(6, verbatimTextOutput("ent_comment2")
+                              )
+                            )
+                   )
                  )
                )
       ),
+      # academics
       tabPanel("Students Acadamic Performance", 
-               sidebarPanel(
-                 numericInput("year_ec", "Input a year", 2004, min = 2002, max = 2004),
-                 textInput("Semester",label = "Choose a Semester", value = ""),
-                 selectInput("Grd",label="Select a Grade", choices=c(9,10,11,12)),
-                 textInput("Subject",label = "Select an Exam", value = "")
-               ),
-               mainPanel(
                  tabsetPanel(
                    tabPanel("Overview of Academic Performance",
-                     plotOutput("acadplot"),
-                     h4("how the scores calculated and what each bar means")
+                     plotlyOutput("acadplot"),
+                     verbatimTextOutput("acad_overview")
                    ),
                    tabPanel("Grades of each Exam",
-                     plotOutput("subject_plot")
-                   ))
-               )
+                            sidebarPanel(
+                              numericInput("year_ec", "Input a year", 2004, min = 2002, max = 2004),
+                              selectInput("Semester",label = "Choose a Semester", choices = c(1,2)),
+                              selectInput("Grd",label="Select a Grade", choices=c(9,10,11,12)),
+                              textInput("Subject",label = "Select an Exam", value = "English")
+                            ),                     
+                            mainPanel(
+                              fluidRow(
+                                column(11,plotOutput("subject_plot")),
+                                column(11,textOutput("pass_comment"))
+                              )
+                              
+                            )
+                   )
+                 )
               ),
-      tabPanel("Teacher", "This panel is to present teacher's qualification and numbers",
-               fluidRow(
-                 column(6,  selectInput(
-                 "School_tch",label="Select a School", choices=staff_ed$SCHOOL)
-                 ),
-                fluidRow(
-                  column(6,  plotOutput()
-                  ),
-                  column(6,  plotOutput()
-                  )
-                )
+      # teachers
+      tabPanel("Teacher",
+               tabsetPanel(
+                 tabPanel("Overview of Teachers",
+                          h5("\n"),
+                          fluidRow(
+                            column(6,  plotlyOutput("plot_qual")
+                            ),
+                            column(6,  h5("\n"), plotOutput("plot_tch_to_stud")
+                            ),
+                            column(6, h5("\t\t\t1 = Below Grade 10,   2 = Grade 10,   4 = Grade 12,   5 = 1 Year higher education,")
+                            ),
+                            column(7),
+                            column(6, h5("\t\t\t6 = 2 Year higher education, 7 = 3 Year higher education, 8=TTI, 10 =TTC, 14 = other")
+                            ),
+                            column(9, tableOutput("mean_state")
+                            )
+                          )
+                          ),
+                 tabPanel("School Conditions",
+                          h5("\n"),
+                          fluidRow(
+                            column(12,  selectInput(
+                              "School_tch",label="Select a School", choices=levels(staffed.expanded$SCHOOL), multiple = TRUE, selected = "Addibre")
+                            ),
+                            column(8, plotlyOutput("plot_qual2")),
+                            column(4, h5("1 = Below Grade 10,   2 = Grade 10,   4 = Grade 12,\n"),
+                                      h5("5 = 1 Year higher education, 6 = 2 Year higher education,\n"),
+                                      h5("7 = 3 Year higher education, 8=TTI, "),
+                                      h5("10 =TTC, 14 = other"),
+                                      h1("\n"),
+                                      verbatimTextOutput("tch_comment")
+                            )
+                          )  
+                 )
                )
-      )
+             )
     )
   )
 )

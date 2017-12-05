@@ -2,7 +2,9 @@
 title: "Education_monitoring_preprocess"
 author: "Henryzyguo"
 date: "11/28/2017"
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,30 +12,78 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(plyr)
 library(dplyr)
+library(tidyr)
 library(reshape2)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r read data}
+```{r read data, include=FALSE, warning= FALSE}
 enr_age <- read.csv('enr_by_agegrd.csv')
+staff_ed <- read.csv('staff_by_ed.csv')
 ent_new <- read.csv('new_entrants.csv')
-schage_pop <- read.csv('schage_population.csv')
-staff_qf <- read.csv('staff_by_qlf.csv')
-
-acad_grd12 <- read.csv("Grd1112_Academics.csv")
+# schage_pop <- read.csv('schage_population.csv')
+# staff_qf <- read.csv('staff_by_qlf.csv')
+stu_grd9 <- read.csv('Grd_0910Students.csv')
+acad_grd9 <- read.csv('Grd_0910Academics.csv')
+acad_12 <- read.csv("Grd1112_Academics.csv")
+acad_overview <- read.csv('aca_overview.csv')
 ```
 
-## Including Plots
+##Students Stats Plots
+suppose the audience has selected school 'Addibre', the graph would look like below:
+```{r plot1, warning= FALSE}
+enr_age<-filter(enr_age,SCHOOL=="Addibre")
+G1<-select(enr_age,starts_with("G1"),Acad_yr)
+#G1F<-select(enr_age,starts_with("G1F"),Acad_yr)
+G1<-arrange(G1,desc(Acad_yr))
+G1$Acad_yr <-NULL 
+
+rownames(G1)<-(2004:2010)
+G1<-as.table(t(G1))
+
+dat2 <- filter(melt(G1),value!=0)
+sex1<-substr(dat2$Var1,3,3)
+age1<-substr(dat2$Var1,4,5)
+dat2<-cbind(dat2,sex1,age1)
+dat2$age1 <- as.numeric(as.character(dat2$age1))
+ggplot(dat2, aes(x=sex1, y=value, fill=factor(age1))) + geom_bar(stat="identity") +labs(x="year",y="person number",fill="age",title="Age component each year")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+theme(plot.title = element_text(hjust = 0.5))+facet_grid(.~Var2)
+```
+
+Graph for new entrants' distribution by gender and age, still by school and the default is "Addibre" 
+```{r pressure, echo=FALSE, warning= FALSE}
+#filter
+# ent_new <- read.csv('new_entrants.csv')
+ent_new <-filter(ent_new,SCHOOL=="Addibre")
+ent_new <-select(ent_new,4:12)
+rownames(ent_new)<-c(2006,2010)
+
+ent_new <-select(ent_new,-Acad_yr)
+#melt
+dat3 <- filter(melt(t(ent_new)),value!=0)
+
+ggplot(dat3, aes(x=Var2, y=value, fill=as.factor(Var1))) + geom_bar(stat="identity",width = 0.5) +labs(x="year",y="person number",fill="age",title="new entry Age conponent each year")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+theme(plot.title = element_text(hjust = 0.5))
+
+ent_new <- read.csv('new_entrants.csv')
+ent_new <-filter(ent_new,SCHOOL=="Addibre")
+ent_new <-select(ent_new,4:12)
+rownames(ent_new)<-c(2006,2010)
+ent_new <-select(ent_new,-Acad_yr)
+#melt
+dat3 <- melt(t(ent_new))
+dat3 %>% separate(Var1,c("male","age"))
+sex<-substr(dat3$Var1,1,1)
+age<-substr(dat3$Var1,2,4)
+dat3<-cbind(dat3,sex,age)
+ggplot(dat3, aes(x=age, y=value,fill=as.factor(sex))) + geom_bar(stat="identity") +labs(x="age",y="person number",title="New entrant each year",fill="sex")+
+scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+theme(plot.title = element_text(hjust = 0.5))+facet_grid(.~Var2)
+```
+
 
 Save staffed.expanded to RData
-
 ```{r process_teachers_data, echo=FALSE}
-staff_ed <- read.csv('staff_by_ed.csv')
+# staff_ed <- read.csv('staff_by_ed.csv')
 # replace all null values in df
 staff_ed[is.na(staff_ed)] <- 0
 # new column is sum of male and female
@@ -54,9 +104,6 @@ colnames(staff_ed14)[15] <- 'NR'
 colnames(staff_ed58)[5:15]<-colnames(staff_ed14)[5:15]
 staff_ednew <- rbind(staff_ed14,staff_ed58)
 remove(staff_ed14,staff_ed58)
-# add a total number of teachers
-# staff_ednew$total <- rowSums(staff_ed[,6:27])
-
 # create columns for saving Qualification levels, not recording the teachers whose qualifications are not recorded
 for(i in 5:14){
   staff_ednew[i+12] <- as.numeric(gsub('Q','',colnames(staff_ednew)[i]))
@@ -74,47 +121,145 @@ staffed.expanded$Qualification[staffed.expanded$Qualification==14]<-11
 remove(staff_ednew,staffed.new)
 ```
 
+##Teacher Certification Visualization
+A violin plot to present teachers' certification level
+can also be controlled with a 'school' button
 ```{r plot teacher}
 # teacher
 # caculate mean
+staffed.expanded <- staffed.expanded[(staffed.expanded$SCHOOL=="Welel"),]
 staff_means <- ddply(staffed.expanded, "grade", summarise, mean_Q = mean(Qualification))
-
-violin <- ggplot(staffed.expanded, aes(x=grade, y=Qualification, fill=grade),color = c("indianred", "gold")) + 
-  geom_violin(show.legend = FALSE) +
-  labs(title="Teachers' Certification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
+violin <- ggplot(staffed.expanded, aes(x=grade, y=Qualification, fill=grade, color=grade)) + 
+  geom_violin(show.legend = TRUE) +
+  labs(title="Teachers' Qualification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
   facet_grid(~grade,scale ="free")
 violin + 
-  stat_summary(fun.y = median, geom="point",color='blue',size = 2) +
-  geom_hline(data=staff_means, aes(yintercept=mean_Q),color=c("orange"), linetype="dashed")+
-  scale_fill_manual(values=c("indianred", "gold"))
+  # stat_summary(fun.y = 'median', geom="point",color='blue',size = 2,show.legend = FALSE) +
+  geom_hline(data=staff_means, aes(yintercept=mean_Q), color="orange", linetype="dashed",show.legend = TRUE)+
+  scale_fill_manual(values=c("indianred", "gold"))+
+  scale_color_manual(values=c("indianred", "gold"))
+  cat("The mean after-primary-education years of Grade 1-4 teachers is",staff_means[1,2],"years\n")
+  cat("The mean after-primary-education years of Grade 5-8 teachers is",staff_means[2,2],"years")
+  
+  
+  staffed.expanded2 <- staffed.expanded[(staffed.expanded$SCHOOL=="Addibre"),]
+  staff_means <- mean(staffed.expanded2$Qualification, na.rm = TRUE)
+  ggplot(data = staffed.expanded2, aes(staffed.expanded2$Qualification, fill=grade, color=grade)) + 
+        geom_histogram(show.legend = TRUE) +
+        labs(title="Teachers' Qualification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
+        scale_fill_manual(values=c("indianred", "gold"))+
+        scale_color_manual(values=c("indianred", "gold"))
 ```
 
-```{r plot student}
+Student/Teacher Ratio.
+The problem is that we only know 3 schools' total number of students while one of them has no teacher information.
+So the visualization only includes 2 schools.
+```{r plot_student, warning=FALSE}
 enr_age <- read.csv('enr_by_agegrd.csv')
 enr_age$Std_Boy <- rowSums(enr_age[grep("M",colnames(enr_age))])
 enr_age$Std_Girl <- rowSums(enr_age[grep("F",colnames(enr_age))])
-tch_std <- enr_age[,c(3,4,183,184,185)] %>% inner_join(staff_ed[,c(3,4,50)], by = c("SCHOOL","Acad_yr"))
+# add a total number of teachers
+staff_ed$total <- rowSums(staff_ed[,5:26])
+tch_std <- enr_age[,c(3,4,183,184,185)] %>% inner_join(staff_ed[,c(3,4,27)], by = c("SCHOOL","Acad_yr"))
 # tch_std <- melt(tch_std, id=c("SCHOOL","Acad_yr","Tch_Sum"))
-p<-ggplot(data=tch_std, aes(x=SCHOOL, y=Tab_16/Tch_Sum, fill=SCHOOL)) +
+p<-ggplot(data=tch_std, aes(x=SCHOOL, y=Tab_16/total, fill=SCHOOL)) +
   geom_bar(stat="identity",width=0.4)+
   labs(title="Students/Teachers Ratio in 2006",x="School Name", y = "Average Student Number of A Teacher") 
 # Horizontal bar plot
 p + coord_flip()
 ```
 
-```{r acad}
+
+##Academic Visualization
+grd9 is the dataset for academics of Grade9.
+The grpah provided is based on the hypothesis that a user selected year 10 and exam Tigrigna.Sem1.G9
+Overall passing rate is calculated and will be presented on the final website
+```{r acad_distribution, message=FALSE, warning=FALSE}
+# find the correct column
+# acad_12[grepl('11',colnames(acad_12)),]
+
 stu_grd9 <- read.csv('Grd_0910Students.csv')
 acad_grd9 <- read.csv('Grd_0910Academics.csv')
 colnames(stu_grd9)[13]<-'Stud.ID'
 stu_grd9 <- stu_grd9[,colSums(is.na(stu_grd9))<nrow(stu_grd9)]
 acad_grd9 <- acad_grd9[,colSums(is.na(acad_grd9))<nrow(acad_grd9)]
 grd9 <- acad_grd9 %>% inner_join(stu_grd9[,c(6,7,8,9,11)], by = "Stud.ID")
-grd9$Age_startGrd9 <- grd9$Age-grd9$Grade+9
+grd9$Sex2[grd9$Sex=="M"] <- "Male"
+grd9$Sex2[grd9$Sex=="F"] <- "Female"
+grd9$Sex <- grd9$Sex2
+# grd9$Age_startGrd9 <- as.factor(grd9$Age-grd9$Grade+9)
 # choose rows grades are not NA and columns
-selected <- grd9 %>% subset(Tigrigna.Sem1.G9 !='NA',select = c(Acad.yr.G9,Tigrigna.Sem1.G9,Sex,Age_startGrd9))
-p  <- ggplot(selected, aes(Tigrigna.Sem1.G9, color=Sex, fill=Sex))
-p + geom_density(alpha=0.55)
+selected <- grd9 %>% subset(Tigrigna.Sem1.G9 !='NA'&Acad.yr.G9=='9/14/10 00:00',select = c(Acad.yr.G9,Tigrigna.Sem1.G9,Sex))
+# create a table to save pass rate
+pass <- ddply(selected, "Sex", summarise, passrate = 
+                length(selected$Tigrigna.Sem1.G9[selected$Tigrigna.Sem1.G9>=50])/length(selected$Tigrigna.Sem1.G9))
+print(cat('passing rate is',pass[1,2]))
+p  <- ggplot(selected, aes(Tigrigna.Sem1.G9, fill=Sex, color=Sex))+
+  scale_color_manual(values=c("indianred", "gold"))
+p + geom_density(alpha=0.5)+
+  scale_fill_manual(values=c("indianred", "gold"))+
+  geom_vline(data=selected, aes(xintercept=50), color="red", linetype="dashed",show.legend = TRUE)+
+  labs(title=paste("Students Grade Distribution,",'passing rate is',unlist(pass[1,2]),sep=" "),x="Grades", y = "Student Percentage Density") 
+
+
+
+
+
+  acad_overview <- read.csv('aca_overview.csv')
+    acad_overview <- filter(acad_overview,Semester=="1")
+    acad_overview <- select(acad_overview,-Semester)
+    #rownames(acad_overview) <-c(9:12)
+    acad_overview <- melt(acad_overview)
+    #rownames(acad_overview)<-acad_overview$grade
+    #acad_overview<-t(acad_overview)
+    ggplot(acad_overview, aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity")+
+      scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
+      labs(x="grade",y="score",title="Academic overview each year",fill="subject")+
+      theme(plot.title = element_text(hjust = 0.5))+
+      facet_grid(.~reorder(grade,value))
 ```
 
+
+```{r save_tables}
+ent_new[is.na(ent_new)] <- 0
+staff_ed[is.na(staff_ed)] <- 0
+saveRDS(ent_new,"ent_new.RData")
+saveRDS(staff_ed,"staff_ed.RData")
+saveRDS(enr_age,"enr_age.RData")
+
+grd12 <- acad_12[,colSums(is.na(acad_12))<nrow(acad_12)]
+colnames(grd12) <- gsub("Tig","Tigrigna",colnames(grd12))
+colnames(grd12) <- gsub("Amh","Amharic",colnames(grd12))
+colnames(grd12) <- gsub("Eng","English",colnames(grd12))
+colnames(grd12) <- gsub("Chem","Chemistry",colnames(grd12))
+colnames(grd12) <- gsub("Bio","Biology",colnames(grd12))
+colnames(grd12) <- gsub("Phy","Physics",colnames(grd12))
+colnames(grd12) <- gsub("Geo","Geography",colnames(grd12))
+colnames(grd12) <- gsub("His","History",colnames(grd12))
+colnames(grd12) <- gsub("Eco","Economics",colnames(grd12))
+colnames(grd12) <- gsub("Buss","Bussine",colnames(grd12))
+
+# colnames(grd12)[grepl('11',colnames(acad_12))]
+# acad_12[grepl('11',colnames(acad_12)),]
+
+grd9 <- grd9[,]
+saveRDS(grd9[,-c(5:7,37,39)],"grd9.RData")
+saveRDS(grd12[,-c(5,39,40)],"grd12.RData")
+
+saveRDS(staffed.expanded,"staffed.expanded.RData")
+saveRDS(acad_overview,"aca_overview.RData")
+saveRDS(staff_ednew,"staff_ednew.RData")
+
+enr_age <- readRDS("enr_age.Rdata")
+staff_ed <- readRDS("staff_ed.Rdata")
+ent_new <-readRDS("ent_new.RData")
+grd9 <- readRDS("grd9.RData")
+grd12 <- readRDS("grd12.RData")
+staffed.expanded <- readRDS("staffed.expanded.RData")
+staff_ednew <- readRDS("staff_ednew.RData")
+acad_overview <- readRDS("aca_overview.RData")
+
+
+```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
