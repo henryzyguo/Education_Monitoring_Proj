@@ -5,8 +5,8 @@ library(dplyr)
 library(tidyr)
 library(reshape2)
 
-enr_age <- readRDS("enr_age.Rdata")
-staff_ed <- readRDS("staff_ed.Rdata")
+enr_age <- readRDS("enr_age.RData")
+staff_ed <- readRDS("staff_ed.RData")
 ent_new <-readRDS("ent_new.RData")
 grd9 <- readRDS("grd9.RData")
 grd12 <- readRDS("grd12.RData")
@@ -96,9 +96,10 @@ A reasonable deduction is that a number of students dropped out of school betwee
         geom_violin(show.legend = TRUE) +
         labs(title="Teachers' Qualification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
         facet_grid(~grade,scale ="free")
-      violin + geom_hline(data=staff_means, aes(yintercept=mean_Q), color="orange", linetype="dashed",show.legend = TRUE)+
+      violin2 <- violin + geom_hline(data=staff_means, aes(yintercept=mean_Q), color="orange", linetype="dashed",show.legend = TRUE)+
         scale_fill_manual(values=c("indianred", "gold"))+
         scale_color_manual(values=c("indianred", "gold"))
+      ggplotly(violin2, tooltip = c("Qualification", "density"))
     })
     
     output$plot_tch_to_stud <- renderPlot({
@@ -113,7 +114,7 @@ A reasonable deduction is that a number of students dropped out of school betwee
         labs(title="Students/Teachers Ratio in 2006",x="School Name", y = "Average Student Number of A Teacher") 
       # Horizontal bar plot
       p + coord_flip()+
-        geom_text(aes(label=round(Tab_16/total,2),nudge_y = 1))
+        geom_text(aes(label=round(Tab_16/total,2)))
     })
   
     output$plot_qual2 <- renderPlotly({
