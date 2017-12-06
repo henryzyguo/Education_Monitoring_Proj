@@ -28,7 +28,7 @@ shinyUI(
                sidebarPanel(
                  # fileInput("file", "File input:"),
                  # textInput("txt", "Text input:", "general"),
-                 selectInput("School",label="Select Students in School", choices=levels(ent_new$SCHOOL)),
+                 selectizeInput("School",label="Select Students in School", choices=levels(ent_new$SCHOOL)),
                  selectInput("Grade",label="Students in Grade", choices=c(1:8))
                ),
                mainPanel(
@@ -67,7 +67,7 @@ shinyUI(
                               numericInput("year_ec", "Input a year", 2004, min = 2002, max = 2004),
                               selectInput("Semester",label = "Choose a Semester", choices = c(1,2)),
                               selectInput("Grd",label="Select a Grade", choices=c(9,10,11,12)),
-                              textInput("Subject",label = "Select an Exam", value = "English")
+                              selectizeInput("Subject",label = "Select an Exam", choices = c(gsub("\\..*","",colnames(grd9)[5:16]),gsub("\\..*","",colnames(grd12)[7:21])), selected = "Math")
                             ),                     
                             mainPanel(
                               fluidRow(
@@ -101,7 +101,7 @@ shinyUI(
                  tabPanel("School Conditions",
                           h5("\n"),
                           fluidRow(
-                            column(12,  selectInput(
+                            column(12,  selectizeInput(
                               "School_tch",label="Select a School", choices=levels(staffed.expanded$SCHOOL), multiple = TRUE, selected = "Addibre")
                             ),
                             column(8, plotlyOutput("plot_qual2")),

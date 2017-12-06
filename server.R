@@ -28,17 +28,19 @@ shinyServer(function(input, output) {
       G1$Acad_yr <-NULL 
       rownames(G1)<-(2004:2010)
       G1<-as.table(t(G1))
-      
       dat2 <- filter(melt(G1),value!=0)
       sex1<-substr(dat2$Var1,3,3)
       age1<-substr(dat2$Var1,4,5)
       dat2<-cbind(dat2,sex1,age1)
       dat2$age1 <- as.numeric(as.character(dat2$age1))
-      ggplot(dat2, aes(x=sex1, y=value, fill=factor(age1))) + 
-        geom_bar(stat="identity") +labs(x="year",y="person number",fill="age",title="Age component each year")+
+      dat2 <- setNames(dat2, c("group","Year","Number","sex", "age"))
+      vis <- ggplot(dat2, aes(x=sex, y = Number, fill=as.factor(age))) + 
+        geom_bar(stat="identity") +
+        labs(x="year",y="person number",fill="age",title="Age component each year")+
         scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue","red","yellow","purple"))+
         theme(plot.title = element_text(hjust = 0.5))+
-        facet_grid(.~Var2) 
+        facet_grid(.~Year)
+      ggplotly(vis, tooltip = c("Year","Number"))
     }) 
     
     output$new_ageplot <- renderPlotly({
@@ -48,11 +50,12 @@ shinyServer(function(input, output) {
       ent_new <-select(ent_new,-Acad_yr)
       #melt
       dat3 <- filter(melt(t(ent_new)),value!=0)
-      ggplot(dat3, aes(x=Var2, y=value, fill=as.factor(Var1))) + 
-             geom_bar(stat="identity",width = 0.5) +
-             labs(x="year",y="person number",fill="age")+
-             scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
-             theme(plot.title = element_text(hjust = 0.5))
+      vis2 <- ggplot(dat3, aes(x=Var2, y=value, fill=as.factor(Var1))) + 
+                     geom_bar(stat="identity",width = 0.5) +
+                     labs(x="year",y="person number",fill="age")+
+                     scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
+                     theme(plot.title = element_text(hjust = 0.5))
+      ggplotly(vis2, tooltip = "value")
     })
     
     output$new_sexplot <- renderPlotly({
@@ -66,7 +69,8 @@ shinyServer(function(input, output) {
       sex<-substr(dat3$Var1,1,1)
       age<-substr(dat3$Var1,2,4)
       dat3<-cbind(dat3,sex,age)
-      ggplot(dat3, aes(x=age, y=value,fill=as.factor(sex))) + geom_bar(stat="identity") +
+      dat3$sex <- as.factor(dat3$sex)
+      vis3 <- ggplot(dat3, aes(x=age, y=value,fill=sex)) + geom_bar(stat="identity") +
         labs(x="age",y="person number",title="New entrant each year",fill="sex")+
         scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
         theme(plot.title = element_text(hjust = 0.5))+
@@ -138,18 +142,21 @@ Most teachers of lower education levels are teaching grade 1 to 4 students and t
     
     
   })
-    # for academics
+  
+  
+# for academics
   observe({
     # academic overview
     output$acadplot <- renderPlotly({
       # acad_overview <- filter(acad_overview,Semester=='1')
       acad_overview <- select(acad_overview,-Semester)
       acad_overview <- melt(acad_overview)
-      ggplot(acad_overview, aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity")+
+      vis4 <- ggplot(acad_overview, aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity")+
         scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
         labs(x="grade",y="score",title="Academic overview each year",fill="subject")+
         theme(plot.title = element_text(hjust = 0.5))+
         facet_grid(.~reorder(grade,value))
+      ggplotly(vis4, tooltip = c("value"))
     })
     
     output$acad_overview <- renderText(
@@ -187,17 +194,17 @@ An concerning discovery is that in Grade 9 and 10, the majority of top marks are
         p + geom_density(alpha=0.5)+
           scale_fill_manual(values=c("indianred", "gold"))+
           geom_vline(data=selected, aes(xintercept=50), color="red", linetype="dashed",show.legend = TRUE)+
-          geom_text(aes(50, 0.001, label=paste("Passing Rate: ", round(pass,4))))+
+          geom_text(aes(55, 0.001, label=paste("Passing Rate: ", round(pass,4))))+
           labs(title = "Students Marks Distribution", x="Marks", y = "Student Percentage Density") #+
           # coord_cartesian(xlim = c(0, 100))
       }
       else {
-        p  <- ggplot(selected, aes(score,fill="gold", color="gold"))
-        p + geom_density(alpha=0.5)+
+        p  <- ggplot(selected, aes(score,fill="gold", color="gold"),show.legend = FALSE)
+        p + geom_density(alpha=0.5,show.legend = FALSE)+
           scale_fill_manual(values="gold")+
           scale_color_manual(values="gold")+
-          geom_vline(data=selected, aes(xintercept=50), color="red", linetype="dashed",show.legend = TRUE)+
-          geom_text(aes(50, 0.001, label=paste("Passing Rate: ", round(pass,4))),color = "red")+
+          geom_vline(data=selected, aes(xintercept=50), color="red", linetype="dashed",show.legend = FALSE)+
+          geom_text(aes(55, 0.001, label=paste("Passing Rate: ", round(pass,4))),color = "red")+
           labs(title = "Students Marks Distribution",x="Marks", y = "Student Percentage Density") #+
           # coord_cartesian(xlim = c(0, 100))
       }
