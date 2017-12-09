@@ -36,10 +36,11 @@ shinyServer(function(input, output) {
       dat2 <- setNames(dat2, c("group","Year","Number","sex", "age"))
       vis <- ggplot(dat2, aes(x=sex, y = Number, fill=as.factor(age))) + 
         geom_bar(stat="identity") +
-        labs(x="year",y="person number",fill="age",title="Age component each year")+
+        labs(x="Year",y="Number of People",fill="Age",title="Age Component Each Year")+
         scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue","red","yellow","purple"))+
-        theme(plot.title = element_text(hjust = 0.5))+
-        facet_grid(.~Year)
+        theme(plot.title = element_text(size=10,hjust = 0.5))+
+        facet_grid(.~Year,space = "fixed",scales = "fixed")+ 
+        theme(text = element_text(family = "Optima",face = "bold"))
       ggplotly(vis, tooltip = c("Year","Number"))
     }) 
     
@@ -52,9 +53,10 @@ shinyServer(function(input, output) {
       dat3 <- filter(melt(t(ent_new)),value!=0)
       vis2 <- ggplot(dat3, aes(x=Var2, y=value, fill=as.factor(Var1))) + 
                      geom_bar(stat="identity",width = 0.5) +
-                     labs(x="year",y="person number",fill="age")+
+                     labs(x="Year",y="Number of People",fill="Age",title="New Entrants Each Year")+
                      scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
-                     theme(plot.title = element_text(hjust = 0.5))
+                     theme(plot.title = element_text(size=10,hjust = 0.5))+
+                     theme(text = element_text(family = "Optima",face = "bold"))
       ggplotly(vis2, tooltip = "value")
     })
     
@@ -71,9 +73,10 @@ shinyServer(function(input, output) {
       dat3<-cbind(dat3,sex,age)
       dat3$sex <- as.factor(dat3$sex)
       vis3 <- ggplot(dat3, aes(x=age, y=value,fill=sex)) + geom_bar(stat="identity") +
-        labs(x="age",y="person number",title="New entrant each year",fill="sex")+
+        labs(x="Age",y="Number of People",title="New Entrants Each Year",fill="Sex")+
         scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
-        theme(plot.title = element_text(hjust = 0.5))+
+        theme(plot.title = element_text(size=10,hjust = 0.5))+
+        theme(text = element_text(family = "Optima",face = "bold"))+
         facet_grid(.~Var2)
     })
     output$enr_comment <- renderText(
@@ -95,6 +98,8 @@ A reasonable deduction is that a number of students dropped out of school betwee
       violin <- ggplot(staffed.expanded, aes(x=grade, y=Qualification, fill=grade, color=grade)) + 
         geom_violin(show.legend = TRUE) +
         labs(title="Teachers' Qualification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
+        theme(text = element_text(family = "Optima",face = "bold")) +
+        theme(plot.title = element_text(size=10,hjust = 0.5))+
         facet_grid(~grade,scale ="free")
       violin2 <- violin + geom_hline(data=staff_means, aes(yintercept=mean_Q), color="orange", linetype="dashed",show.legend = TRUE)+
         scale_fill_manual(values=c("indianred", "gold"))+
@@ -111,9 +116,11 @@ A reasonable deduction is that a number of students dropped out of school betwee
       # tch_std <- melt(tch_std, id=c("SCHOOL","Acad_yr","Tch_Sum"))
       p<-ggplot(data=tch_std, aes(x=SCHOOL, y=Tab_16/total, fill=SCHOOL)) +
         geom_bar(stat="identity",width=0.2)+
-        labs(title="Students/Teachers Ratio in 2006",x="School Name", y = "Average Student Number of A Teacher") 
+        labs(title="Students/Teachers Ratio in 2006",x="School Name", y = "Average Student Number of a Teacher") 
       # Horizontal bar plot
       p + coord_flip()+
+        theme(text = element_text(family = "Optima",face = "bold")) +
+        theme(plot.title = element_text(size=10,hjust = 0.5))+
         geom_text(aes(label=round(Tab_16/total,2)))
     })
   
@@ -124,6 +131,8 @@ A reasonable deduction is that a number of students dropped out of school betwee
       ggplot(data = staffed.expanded2, aes(Qualification, fill=grade, color=grade)) + 
         geom_histogram(stat = 'count', show.legend = TRUE, width = 0.25) +
         labs(title="Teachers' Qualification by Grades",x="Teaching Grades", y = "Years of Education after Grade 10") +
+        theme(text = element_text(family = "Optima",face = "bold")) +
+        theme(plot.title = element_text(size=10,hjust = 0.5))+
         scale_fill_manual(values=c("indianred", "gold"))+
         scale_color_manual(values=c("indianred", "gold"))+
         coord_cartesian(xlim = c(1, 14))
@@ -149,14 +158,17 @@ Most teachers of lower education levels are teaching grade 1 to 4 students and t
   observe({
     # academic overview
     output$acadplot <- renderPlotly({
-      # acad_overview <- filter(acad_overview,Semester=='1')
+      acad_overview <- filter(acad_overview,Semester=='1')
       acad_overview <- select(acad_overview,-Semester)
       acad_overview <- melt(acad_overview)
       vis4 <- ggplot(acad_overview, aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity")+
         scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue","blue"))+
-        labs(x="grade",y="score",title="Academic overview each year",fill="subject")+
-        theme(plot.title = element_text(hjust = 0.5))+
-        facet_grid(.~reorder(grade,value))
+        labs(size=10,x="grade",y="score",title="Academic Overview Each Year",fill="subject")+
+        theme(plot.title = element_text(size=10,hjust = 0.5))+
+        theme(text = element_text(family = "Optima",face = "bold"))+
+        scale_x_discrete(labels= c("Litercy","Math","Sci.","S.Sci.","P.E."))+
+        facet_grid(.~reorder(grade,value),space = "fixed",scales = "fixed")
+      ggplotly(vis4, tooltip = c("value"))
       ggplotly(vis4, tooltip = c("value"))
     })
     
@@ -196,7 +208,10 @@ An concerning discovery is that in Grade 9 and 10, the majority of top marks are
           scale_fill_manual(values=c("indianred", "gold"))+
           geom_vline(data=selected, aes(xintercept=50), color="red", linetype="dashed",show.legend = TRUE)+
           geom_text(aes(55, 0.001, label=paste("Passing Rate: ", round(pass,4))))+
-          labs(title = "Students Marks Distribution", x="Marks", y = "Student Percentage Density") #+
+          theme(plot.title = element_text(size=10,hjust = 0.5))+
+          labs(title = "Students Marks Distribution", x="Marks", y = "Student Percentage Density")+
+          theme(text = element_text(family = "Optima",face = "bold"))
+      
           # coord_cartesian(xlim = c(0, 100))
       }
       else {
@@ -206,7 +221,9 @@ An concerning discovery is that in Grade 9 and 10, the majority of top marks are
           scale_color_manual(values="gold")+
           geom_vline(data=selected, aes(xintercept=50), color="red", linetype="dashed",show.legend = FALSE)+
           geom_text(aes(55, 0.001, label=paste("Passing Rate: ", round(pass,4))),color = "red")+
-          labs(title = "Students Marks Distribution",x="Marks", y = "Student Percentage Density") #+
+          labs(title = "Students Marks Distribution",x="Marks", y = "Student Percentage Density")+
+          theme(plot.title = element_text(size=10,hjust = 0.5))+
+          theme(text = element_text(family = "Optima",face = "bold"))#+
           # coord_cartesian(xlim = c(0, 100))
       }
 

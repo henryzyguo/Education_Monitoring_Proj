@@ -39,7 +39,7 @@ shinyUI(
                             verbatimTextOutput("enr_comment")
                    ),
                    tabPanel("Student Entrance Age and Sex",
-                            h4("New Grade One Entry Age Component by Year"),
+                    
                             # adidesta
                             fluidRow(
                               column(6,  plotlyOutput("new_ageplot")

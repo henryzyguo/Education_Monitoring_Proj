@@ -83,8 +83,8 @@ scale_fill_manual(values=c("indianred", "orange", "gold","skyblue4","light blue"
 ```{r acad}
 ###3academics
 acad_overview <- read.csv('aca_overview.csv')
-acad_overview <- filter(acad_overview,test=="1ST")
-acad_overview <- select(acad_overview,-test)
+acad_overview <- filter(acad_overview,Semester=="1")
+acad_overview <- select(acad_overview,-Semester)
 #rownames(acad_overview) <-c(9:12)
 acad_overview <- melt(acad_overview)
 #rownames(acad_overview)<-acad_overview$grade
