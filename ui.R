@@ -36,7 +36,7 @@ shinyUI(
                    tabPanel("Student Age Component",
                             h4(""),
                             plotlyOutput("ageplot"),
-                            verbatimTextOutput("enr_comment")
+                            htmlOutput("enr_comment")
                    ),
                    tabPanel("Student Entrance Age and Sex",
                     
@@ -46,9 +46,9 @@ shinyUI(
                               ),
                               column(6,  plotlyOutput("new_sexplot")
                               ),
-                              column(6, verbatimTextOutput("ent_comment1")
+                              column(6, htmlOutput("ent_comment1")
                               ),
-                              column(6, verbatimTextOutput("ent_comment2")
+                              column(6, htmlOutput("ent_comment2")
                               )
                             )
                    )
@@ -110,7 +110,7 @@ shinyUI(
                                       h5("7 = 3 Year higher education, 8=TTI, "),
                                       h5("10 =TTC, 14 = other"),
                                       h1("\n"),
-                                      verbatimTextOutput("tch_comment")
+                                      htmlOutput("tch_comment")
                             )
                           )  
                  )

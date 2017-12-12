@@ -79,14 +79,24 @@ shinyServer(function(input, output) {
         theme(text = element_text(family = "Optima",face = "bold"))+
         facet_grid(.~Var2)
     })
-    output$enr_comment <- renderText(
-"This visualization shows the age distribution by age in each year from 2004-2010 (Ethiopian Calendar), in one specific school and grade. You can explore different schools and grades.\n
-From this visualization, we are able to compare age and sex distribution among Academic Years. We can find that during 2004 and 2010, more girls are joining the school while the enrollment fluctuation remains high.\n
-A reasonable deduction is that a number of students dropped out of school between 2004 and 2006 but they returned school in 2007 and 2008. This can explain the significant increase of elder-age-students in those years.")
+    output$enr_comment <- renderUI({
+      HTML(
+        "<br/>This visualization shows the age distribution by age in each year from 2004-2010 (Ethiopian Calendar), in one specific school and grade. You can explore different schools and grades.\n
+        From this visualization, we are able to compare age and sex distribution among Academic Years. We can find that during 2004 and 2010, more girls are joining the school while the enrollment fluctuation remains high.\n
+        A reasonable deduction is that a number of students dropped out of school between 2004 and 2006 but they returned school in 2007 and 2008. This can explain the significant increase of elder-age-students in those years."
+      )
+    })
+      
     
-    output$ent_comment1 <- renderText("This visualization shows the age distribution of new entrants in 2006&2010 (Ethiopian Calendar), in one specific school. There are choices of different school to select.")
+    output$ent_comment1 <- renderUI({
+      HTML("<br/>This visualization shows the age distribution of new entrants in 2006&2010 (Ethiopian Calendar), in one specific school. There are choices of different school to select."
+           )
+      })
     
-    output$ent_comment2 <- renderText("We are able to note the sex ratio in different age and compare the age distribution in different year. (we only have data of new entrants in 2006&2010, it can show a clearer trend in the future if more data is added.)")
+    output$ent_comment2 <- renderUI({
+      HTML("<br/>We are able to note the sex ratio in different age and compare the age distribution in different year. (we only have data of new entrants in 2006&2010, it can show a clearer trend in the future if more data is added.)"
+          )
+      })
     
   })
   
@@ -139,9 +149,10 @@ A reasonable deduction is that a number of students dropped out of school betwee
     })
     
     
-    output$tch_comment <- renderText({
-"This visualization shows the distribution of teachers’ certification starting in 2006, in one specific school.  
+    output$tch_comment <- renderUI({
+      HTML("<br/><br/>This histogram shows the distribution of teachers’ certification starting from 2006, in one specific school.  
 Most teachers of lower education levels are teaching grade 1 to 4 students and the great proportion of teachers have not received higher education"
+      )
     })
     
     output$mean_state <- renderTable({
